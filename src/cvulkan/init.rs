@@ -1,23 +1,14 @@
-use std::{ffi::CString, ops::Deref};
+use std::ffi::CString;
 
 use ash::{
     khr,
-    vk::{self, PhysicalDevice, PhysicalDeviceType, SurfaceFormatKHR, SurfaceKHR, SwapchainKHR},
+    vk::{self, PhysicalDevice, SurfaceKHR, SwapchainKHR},
     Entry, Instance,
 };
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
 
-#[derive(Debug)]
-pub struct UnwrappedOption<T>(pub(crate) Option<T>);
-
-impl<T> Deref for UnwrappedOption<T> {
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        self.0.as_ref().expect("Attempted to deref a None value")
-    }
-}
+use crate::unwraped_option::UnwrappedOption;
 
 pub struct Volcan {
     pub(super) entry: Entry,
@@ -37,6 +28,7 @@ pub struct Volcan {
     pub(super) swapchain_image_views: UnwrappedOption<Vec<vk::ImageView>>,
 }
 
+//TODO: Clean
 impl Volcan {
     pub fn new(window: &Window) -> Self {
         let entry = unsafe { Entry::load().unwrap() };
