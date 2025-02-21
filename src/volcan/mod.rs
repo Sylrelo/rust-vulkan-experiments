@@ -3,6 +3,7 @@ pub mod device;
 pub mod framebuffer;
 pub mod init;
 pub mod pipeline;
+pub mod raytracing_accecleration_structure;
 pub mod render_pass;
 pub mod shader_modules;
 pub mod surface;
