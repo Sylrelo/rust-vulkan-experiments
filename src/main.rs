@@ -7,6 +7,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+use ash::vk;
+use unwraped_option::Lazy;
 use volcan::{init::Volcan, pipeline::VolcanPipeline};
 use winit::{
     application::ApplicationHandler,
@@ -20,6 +22,9 @@ pub struct App {
     window: Option<Arc<Window>>,
     frame_count: u32,
     last_update_time: Instant,
+
+    volcan: Lazy<Volcan>,
+    test_raster_pipeline: Lazy<vk::Pipeline>,
 }
 
 impl App {
@@ -28,6 +33,8 @@ impl App {
             window: None,
             frame_count: 0,
             last_update_time: Instant::now(),
+            test_raster_pipeline: Lazy::new(),
+            volcan: Lazy::new(),
         }
     }
 }
@@ -46,12 +53,18 @@ impl ApplicationHandler for App {
         volcan.create_swapchain_images();
         volcan.create_render_pass();
         volcan.create_framebuffers();
+        volcan.create_command_pool();
+
+        volcan.create_fences();
 
         // volcan
-        VolcanPipeline::create_raster_pipeline(volcan.device.clone(), *volcan.render_pass);
+        let raster_pipeline =
+            VolcanPipeline::create_raster_pipeline(volcan.device.clone(), *volcan.render_pass);
 
-        volcan.unload();
-        std::process::exit(0);
+        self.test_raster_pipeline.set(raster_pipeline);
+
+        self.volcan.set(volcan);
+        // volcan.unload();
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {
@@ -64,6 +77,8 @@ impl ApplicationHandler for App {
             // WindowEvent::Focused(WindowId) => {}
             WindowEvent::RedrawRequested => {
                 self.window.as_ref().unwrap().request_redraw();
+
+                self.volcan.test_draw(*self.test_raster_pipeline);
 
                 self.frame_count += 1;
                 let now = Instant::now();

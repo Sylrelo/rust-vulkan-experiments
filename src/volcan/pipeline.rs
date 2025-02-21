@@ -17,7 +17,10 @@ impl VolcanPipeline {
     //     }
     // }
 
-    pub fn create_raster_pipeline(device: ash::Device, render_pass: vk::RenderPass) {
+    pub fn create_raster_pipeline(
+        device: ash::Device,
+        render_pass: vk::RenderPass,
+    ) -> vk::Pipeline {
         let pipeline_layout_info = vk::PipelineLayoutCreateInfo::default();
         let pipeline_layout = unsafe {
             device
@@ -128,5 +131,7 @@ impl VolcanPipeline {
         .remove(0);
 
         println!("graphics_pipeline: {:?}", graphics_pipeline);
+
+        return graphics_pipeline;
     }
 }

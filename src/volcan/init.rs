@@ -18,6 +18,7 @@ pub struct Volcan {
     pub(super) surface: SurfaceKHR,
     pub(super) surface_loader: ash::khr::surface::Instance,
 
+    pub(super) queue_index: u32,
     pub(super) primary_queue: vk::Queue,
     pub(crate) device: ash::Device,
 
@@ -30,6 +31,12 @@ pub struct Volcan {
 
     pub(crate) render_pass: Lazy<vk::RenderPass>,
     pub(super) framebuffers: Lazy<Vec<vk::Framebuffer>>,
+
+    pub(super) command_buffers: Lazy<Vec<vk::CommandBuffer>>,
+
+    pub(super) img_available_sem: Lazy<vk::Semaphore>,
+    pub(super) render_finished_sem: Lazy<vk::Semaphore>,
+    pub(super) in_flight_fence: Lazy<vk::Fence>,
 }
 
 //TODO: Clean
@@ -234,6 +241,7 @@ impl Volcan {
             surface_loader,
 
             primary_queue: present_queue,
+            queue_index: selected_queue_index,
             device: device,
 
             swapchain: UnwrappedOption(None),
@@ -245,6 +253,11 @@ impl Volcan {
 
             render_pass: Lazy::new(),
             framebuffers: Lazy::new(),
+            command_buffers: Lazy::new(),
+
+            img_available_sem: Lazy::new(),
+            render_finished_sem: Lazy::new(),
+            in_flight_fence: Lazy::new(),
         }
     }
 
@@ -281,6 +294,130 @@ impl Volcan {
             let ext_name =
                 unsafe { std::ffi::CStr::from_ptr(ext.extension_name.as_ptr()).to_string_lossy() };
             println!("- {} (spec version: {})", ext_name, ext.spec_version);
+        }
+    }
+
+    pub fn create_fences(&mut self) {
+        let semaphore_info = vk::SemaphoreCreateInfo::default();
+        let fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
+
+        let image_available_semaphore = unsafe {
+            self.device
+                .create_semaphore(&semaphore_info, None)
+                .expect("Cannot create samphore.")
+        };
+
+        let render_finished_semaphore = unsafe {
+            self.device
+                .create_semaphore(&semaphore_info, None)
+                .expect("Cannot create samphore.")
+        };
+
+        let in_flight_fence = unsafe {
+            self.device
+                .create_fence(&fence_info, None)
+                .expect("Cannot create samphore.")
+        };
+
+        self.img_available_sem.set(image_available_semaphore);
+        self.render_finished_sem.set(render_finished_semaphore);
+        self.in_flight_fence.set(in_flight_fence);
+    }
+
+    pub fn test_draw(&self, test_raster_pipeline: vk::Pipeline) {
+        /* --------- COMMAND BUFFER (TODO CALCULATE ONE TIME IF NO CHANGES) --------- */
+
+        for (i, &command_buffer) in self.command_buffers.iter().enumerate() {
+            let begin_info = vk::CommandBufferBeginInfo::default();
+            unsafe {
+                self.device
+                    .begin_command_buffer(command_buffer, &begin_info)
+                    .expect("Cannot begin command buffer");
+            }
+            let clear_values = [vk::ClearValue {
+                color: vk::ClearColorValue {
+                    float32: [0.0, 0.0, 0.0, 1.0],
+                },
+            }];
+
+            let render_pass_begin_info = vk::RenderPassBeginInfo::default()
+                .render_pass(*self.render_pass)
+                .framebuffer(self.framebuffers[i])
+                .render_area(vk::Rect2D {
+                    offset: vk::Offset2D { x: 0, y: 0 },
+                    extent: *self.swapchain_extents,
+                })
+                .clear_values(&clear_values);
+
+            unsafe {
+                self.device.cmd_begin_render_pass(
+                    command_buffer,
+                    &render_pass_begin_info,
+                    vk::SubpassContents::INLINE,
+                );
+                self.device.cmd_bind_pipeline(
+                    command_buffer,
+                    vk::PipelineBindPoint::GRAPHICS,
+                    test_raster_pipeline,
+                );
+                self.device.cmd_draw(command_buffer, 3, 1, 0, 0);
+                self.device.cmd_end_render_pass(command_buffer);
+                self.device
+                    .end_command_buffer(command_buffer)
+                    .expect("Cannot end command buffer.");
+            }
+        }
+
+        /* --------------------------------- DRAWING -------------------------------- */
+
+        unsafe {
+            self.device
+                .wait_for_fences(&[*self.in_flight_fence], true, std::u64::MAX)
+                .expect("Failed to wait for fence");
+            self.device
+                .reset_fences(&[*self.in_flight_fence])
+                .expect("Failed to reset fence");
+        }
+
+        let (image_index, _) = unsafe {
+            self.swapchain_loader
+                .acquire_next_image(
+                    *self.swapchain,
+                    std::u64::MAX,
+                    *self.img_available_sem,
+                    vk::Fence::null(),
+                )
+                .expect("Failed to acquire next image")
+        };
+
+        let wait_semaphores = [*self.img_available_sem];
+        let signal_semaphores = [*self.render_finished_sem];
+        let wait_stages = [vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT];
+
+        let command_buffers_binding = [self.command_buffers[image_index as usize]];
+        let submit_info = vk::SubmitInfo::default()
+            .wait_semaphores(&wait_semaphores)
+            .wait_dst_stage_mask(&wait_stages)
+            .command_buffers(&command_buffers_binding)
+            .signal_semaphores(&signal_semaphores);
+
+        unsafe {
+            self.device
+                .queue_submit(self.primary_queue, &[submit_info], *self.in_flight_fence)
+                .expect("Failed to submit draw command buffer");
+        }
+
+        let swapchain_binding = [*self.swapchain];
+        let image_index_binding: [u32; 1] = [image_index];
+        let present_info = vk::PresentInfoKHR::default()
+            .wait_semaphores(&signal_semaphores)
+            .swapchains(&swapchain_binding)
+            .image_indices(&image_index_binding);
+
+        unsafe {
+            self.swapchain_loader
+                .queue_present(self.primary_queue, &present_info)
+                .expect("Failed to present swapchain image");
         }
     }
 

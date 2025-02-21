@@ -19,11 +19,8 @@ impl<T> Lazy<T> {
         Self(OnceCell::new())
     }
 
-    pub fn set(&self, data: T)
-    where
-        T: Debug,
-    {
-        self.0.set(data).expect("Cannot set")
+    pub fn set(&self, data: T) {
+        _ = self.0.set(data)
     }
 }
 
