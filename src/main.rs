@@ -1,13 +1,13 @@
-mod cvulkan;
 mod unwraped_option;
+#[allow(dead_code)]
+mod volcan;
 
 use std::{
-    os,
     sync::Arc,
     time::{Duration, Instant},
 };
 
-use cvulkan::init::Volcan;
+use volcan::init::Volcan;
 use winit::{
     application::ApplicationHandler,
     dpi::{LogicalSize, Size},
@@ -44,6 +44,8 @@ impl ApplicationHandler for App {
         let mut volcan = Volcan::new(&window);
         volcan.create_swapchain(1920, 1080);
         volcan.create_swapchain_images();
+        volcan.create_render_pass();
+        volcan.create_framebuffers();
 
         volcan.unload();
         std::process::exit(0);

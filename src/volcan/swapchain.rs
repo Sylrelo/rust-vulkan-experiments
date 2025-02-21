@@ -88,7 +88,8 @@ impl Volcan {
 
         self.swapchain_loader = UnwrappedOption(Some(swapchain_loader));
         self.swapchain = UnwrappedOption(Some(swapchain));
-        self.swapchain_format = UnwrappedOption(Some(surface_format.format))
+        self.swapchain_format = UnwrappedOption(Some(surface_format.format));
+        self.swapchain_extents.set(extent);
     }
 
     pub fn create_swapchain_images(&mut self) {

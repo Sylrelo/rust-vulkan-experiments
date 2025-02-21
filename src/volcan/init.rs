@@ -8,7 +8,7 @@ use ash::{
 use raw_window_handle::{HasDisplayHandle, HasWindowHandle};
 use winit::window::Window;
 
-use crate::unwraped_option::UnwrappedOption;
+use crate::unwraped_option::{Lazy, UnwrappedOption};
 
 pub struct Volcan {
     pub(super) entry: Entry,
@@ -22,10 +22,14 @@ pub struct Volcan {
     pub(super) device: ash::Device,
 
     pub(super) swapchain: UnwrappedOption<SwapchainKHR>,
+    pub(super) swapchain_extents: Lazy<vk::Extent2D>,
     pub(super) swapchain_loader: UnwrappedOption<khr::swapchain::Device>,
     pub(super) swapchain_format: UnwrappedOption<vk::Format>,
     pub(super) swapchain_images: UnwrappedOption<Vec<vk::Image>>,
     pub(super) swapchain_image_views: UnwrappedOption<Vec<vk::ImageView>>,
+
+    pub(super) render_pass: Lazy<vk::RenderPass>,
+    pub(super) framebuffers: Lazy<Vec<vk::Framebuffer>>,
 }
 
 //TODO: Clean
@@ -228,10 +232,14 @@ impl Volcan {
             device: device,
 
             swapchain: UnwrappedOption(None),
+            swapchain_extents: Lazy::new(),
             swapchain_loader: UnwrappedOption(None),
             swapchain_format: UnwrappedOption(None),
             swapchain_images: UnwrappedOption(None),
             swapchain_image_views: UnwrappedOption(None),
+
+            render_pass: Lazy::new(),
+            framebuffers: Lazy::new(),
         }
     }
 
