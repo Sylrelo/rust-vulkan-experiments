@@ -12,7 +12,7 @@ use crate::unwraped_option::{Lazy, UnwrappedOption};
 
 pub struct Volcan {
     pub(super) entry: Entry,
-    pub(super) instance: Instance,
+    pub(crate) instance: Instance,
     pub(super) physical_device: PhysicalDevice,
 
     pub(super) surface: SurfaceKHR,

@@ -134,4 +134,113 @@ impl VolcanPipeline {
 
         return graphics_pipeline;
     }
+
+    pub fn create_raytracing_pipeline(instance: &ash::Instance, device: &ash::Device) {
+        /* ------------------------------ SHADER STAGE ------------------------------ */
+
+        let entry_point = CString::new("main").unwrap();
+
+        let raygen_module =
+            VolcanShaderModule::create_shader(&device, "./shaders/dist/raygen.rgen.spv");
+        let raymiss_module =
+            VolcanShaderModule::create_shader(&device, "./shaders/dist/raymiss.rmiss.spv");
+        let rayhit_module =
+            VolcanShaderModule::create_shader(&device, "./shaders/dist/rayhit.rchit.spv");
+        // let intersection_module =
+        // VolcanShaderModule::create_shader(&device, "./shaders/dist/intersection.rint.spv");
+
+        let raygen_stage = vk::PipelineShaderStageCreateInfo::default()
+            .stage(vk::ShaderStageFlags::RAYGEN_KHR)
+            .module(raygen_module)
+            .name(&entry_point);
+
+        let miss_stage = vk::PipelineShaderStageCreateInfo::default()
+            .stage(vk::ShaderStageFlags::MISS_KHR)
+            .module(raymiss_module)
+            .name(&entry_point);
+
+        let chit_stage = vk::PipelineShaderStageCreateInfo::default()
+            .stage(vk::ShaderStageFlags::CLOSEST_HIT_KHR)
+            .module(rayhit_module)
+            .name(&entry_point);
+
+        // let intersection_stage = vk::PipelineShaderStageCreateInfo::default()
+        //     .stage(vk::ShaderStageFlags::INTERSECTION_KHR)
+        //     .module(intersection_stage)
+        //     .name(&entry_point);
+
+        let shader_stages = [
+            raygen_stage,
+            miss_stage,
+            chit_stage,
+            //intersection_stage
+        ];
+
+        // let procedural_hit_group = vk::RayTracingShaderGroupCreateInfoKHR::default()
+        //     .ty(vk::RayTracingShaderGroupTypeKHR::PROCEDURAL_HIT_GROUP)
+        //     .general_shader(vk::SHADER_UNUSED_KHR)
+        //     .closest_hit_shader(2)
+        //     .any_hit_shader(vk::SHADER_UNUSED_KHR)
+        //     .intersection_shader(3);
+
+        let raygen_group = vk::RayTracingShaderGroupCreateInfoKHR::default()
+            .ty(vk::RayTracingShaderGroupTypeKHR::GENERAL)
+            .general_shader(0) // index in shader_stages array
+            .closest_hit_shader(vk::SHADER_UNUSED_KHR)
+            .any_hit_shader(vk::SHADER_UNUSED_KHR)
+            .intersection_shader(vk::SHADER_UNUSED_KHR);
+
+        let miss_group = vk::RayTracingShaderGroupCreateInfoKHR::default()
+            .ty(vk::RayTracingShaderGroupTypeKHR::GENERAL)
+            .general_shader(1)
+            .closest_hit_shader(vk::SHADER_UNUSED_KHR)
+            .any_hit_shader(vk::SHADER_UNUSED_KHR)
+            .intersection_shader(vk::SHADER_UNUSED_KHR);
+
+        let hit_group = vk::RayTracingShaderGroupCreateInfoKHR::default()
+            .ty(vk::RayTracingShaderGroupTypeKHR::TRIANGLES_HIT_GROUP)
+            .general_shader(vk::SHADER_UNUSED_KHR)
+            .closest_hit_shader(2)
+            .any_hit_shader(vk::SHADER_UNUSED_KHR)
+            .intersection_shader(vk::SHADER_UNUSED_KHR);
+
+        let shader_groups = [
+            raygen_group,
+            miss_group,
+            hit_group,
+            //  procedural_hitgroup
+        ];
+
+        /* -------------------------------- PIPELINE -------------------------------- */
+
+        let pipeline_layout_info = vk::PipelineLayoutCreateInfo::default();
+        let pipeline_layout = unsafe {
+            device
+                .create_pipeline_layout(&pipeline_layout_info, None)
+                .expect("Failed to create pipeline layout")
+        };
+
+        let pipeline_info = vk::RayTracingPipelineCreateInfoKHR::default()
+            .stages(&shader_stages)
+            .groups(&shader_groups)
+            .max_pipeline_ray_recursion_depth(1) // Adjust as needed for recursion
+            .layout(pipeline_layout);
+
+        let ray_tracing_pipeline_loader =
+            ash::khr::ray_tracing_pipeline::Device::new(instance, device);
+
+        let ray_tracing_pipeline = unsafe {
+            ray_tracing_pipeline_loader
+                .create_ray_tracing_pipelines(
+                    vk::DeferredOperationKHR::null(),
+                    vk::PipelineCache::null(),
+                    &[pipeline_info],
+                    None,
+                )
+                .expect("Failed to create ray tracing pipeline")
+                .remove(0)
+        };
+
+        println!("Raytracing pipeline: {:?}", ray_tracing_pipeline);
+    }
 }

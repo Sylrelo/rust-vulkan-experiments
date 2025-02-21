@@ -8,11 +8,15 @@
 		"emeraldwalk.runonsave": {
 			"commands": [
 				{
-					"match": ".*\\.(vert|frag|comp)$",
-					"cmd": "C:\\VulkanSDK\\1.4.304.1\\Bin\\glslangValidator.exe -V ${file} -o ${fileDirname}/dist/${fileBasename}.spv"
+					"match": ".*\\.(vert|frag|comp|rgen|rchit|rmiss|rint)$",
+					"cmd": "C:\\VulkanSDK\\1.4.304.1\\Bin\\glslangValidator.exe --target-env vulkan1.2 -V ${file} -o ${fileDirname}/dist/${fileBasename}.spv"
 				}
 			]
 		},
-		"spirv-viewer.spirvDisPath": "C:\\VulkanSDK\\1.4.304.1\\Bin\\spirv-dis.exe"
+		"spirv-viewer.spirvDisPath": "C:\\VulkanSDK\\1.4.304.1\\Bin\\spirv-dis.exe",
+		"glsllint.glslangValidatorArgs": [
+			"--target-env",
+			"vulkan1.2"
+		]
 	}
 }

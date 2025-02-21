@@ -7,7 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use ash::vk;
+use ash::vk::{self};
 use unwraped_option::Lazy;
 use volcan::{init::Volcan, pipeline::VolcanPipeline};
 use winit::{
@@ -61,10 +61,13 @@ impl ApplicationHandler for App {
         let raster_pipeline =
             VolcanPipeline::create_raster_pipeline(volcan.device.clone(), *volcan.render_pass);
 
-        self.test_raster_pipeline.set(raster_pipeline);
+        let raytracing_pipeline =
+            VolcanPipeline::create_raytracing_pipeline(&volcan.instance, &volcan.device);
+        volcan.unload();
+
+        std::process::exit(0);
 
         self.volcan.set(volcan);
-        // volcan.unload();
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _id: WindowId, event: WindowEvent) {

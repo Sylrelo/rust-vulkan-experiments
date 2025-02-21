@@ -1,0 +1,34 @@
+#version 460
+#extension GL_EXT_ray_tracing : require
+
+layout(set = 0, binding = 0) uniform accelerationStructureEXT topLevelAS;
+layout(location = 0) rayPayloadEXT vec3 payload;
+
+void main() {
+    // Compute normalized device coordinates from launch ID and size.
+    vec2 pixelCenter = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+    vec2 resolution = vec2(gl_LaunchSizeEXT.xy);
+    vec2 ndc = (pixelCenter / resolution) * 2.0 - 1.0;
+
+    // Set up a basic camera.
+    vec3 rayOrigin = vec3(0.0, 0.0, -5.0);
+    vec3 rayDirection = normalize(vec3(ndc, 1.0));
+
+    // Trace the ray.
+    traceRayEXT(
+        topLevelAS,          // Acceleration structure
+        0xFF,                // Ray mask
+        0,                   // Ray cull mask
+        0,                   // SBT record offset
+        0,                   // SBT record stride
+        0,                   // Miss shader index
+        rayOrigin,           // Ray origin
+        0.001,               // Minimum hit distance
+        rayDirection,        // Ray direction
+        10000.0,             // Maximum hit distance
+        0                    // Payload location
+    );
+
+    // The payload now holds the color from the hit or miss shader.
+    // In a full implementation, you would write this color to an output image.
+}
