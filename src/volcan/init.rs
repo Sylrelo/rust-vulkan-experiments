@@ -19,7 +19,7 @@ pub struct Volcan {
     pub(super) surface_loader: ash::khr::surface::Instance,
 
     pub(super) primary_queue: vk::Queue,
-    pub(super) device: ash::Device,
+    pub(crate) device: ash::Device,
 
     pub(super) swapchain: UnwrappedOption<SwapchainKHR>,
     pub(super) swapchain_extents: Lazy<vk::Extent2D>,
@@ -28,12 +28,17 @@ pub struct Volcan {
     pub(super) swapchain_images: UnwrappedOption<Vec<vk::Image>>,
     pub(super) swapchain_image_views: UnwrappedOption<Vec<vk::ImageView>>,
 
-    pub(super) render_pass: Lazy<vk::RenderPass>,
+    pub(crate) render_pass: Lazy<vk::RenderPass>,
     pub(super) framebuffers: Lazy<Vec<vk::Framebuffer>>,
 }
 
 //TODO: Clean
 impl Volcan {
+    // pub fn init(window: &Window) -> Self {
+    //     let mut volcan = Volcan::new(window);
+
+    // }
+
     pub fn new(window: &Window) -> Self {
         let entry = unsafe { Entry::load().unwrap() };
 

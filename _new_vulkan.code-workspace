@@ -4,5 +4,15 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"emeraldwalk.runonsave": {
+			"commands": [
+				{
+					"match": ".*\\.(vert|frag|comp)$",
+					"cmd": "C:\\VulkanSDK\\1.4.304.1\\Bin\\glslangValidator.exe -V ${file} -o ${fileDirname}/dist/${fileBasename}.spv"
+				}
+			]
+		},
+		"spirv-viewer.spirvDisPath": "C:\\VulkanSDK\\1.4.304.1\\Bin\\spirv-dis.exe"
+	}
 }

@@ -4,6 +4,10 @@ use crate::unwraped_option::UnwrappedOption;
 
 use super::init::Volcan;
 
+struct VolcanSwapchain {
+    //TODO: Move all swapchain_* variables from Volcan here
+}
+
 impl Volcan {
     pub fn create_swapchain(&mut self, window_width: u32, window_height: u32) {
         let capabilities = unsafe {

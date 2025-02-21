@@ -15,6 +15,7 @@ impl Volcan {
                     .attachments(&image_views)
                     .width(self.swapchain_extents.width)
                     .height(self.swapchain_extents.height)
+                    .render_pass(*self.render_pass)
                     .layers(1);
 
                 unsafe {

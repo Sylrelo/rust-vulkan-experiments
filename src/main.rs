@@ -7,7 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use volcan::init::Volcan;
+use volcan::{init::Volcan, pipeline::VolcanPipeline};
 use winit::{
     application::ApplicationHandler,
     dpi::{LogicalSize, Size},
@@ -46,6 +46,9 @@ impl ApplicationHandler for App {
         volcan.create_swapchain_images();
         volcan.create_render_pass();
         volcan.create_framebuffers();
+
+        // volcan
+        VolcanPipeline::create_raster_pipeline(volcan.device.clone(), *volcan.render_pass);
 
         volcan.unload();
         std::process::exit(0);
